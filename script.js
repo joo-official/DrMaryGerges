@@ -5,17 +5,16 @@
 const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1raXbc1Cn1JDuz4StIKchTuLaQDSbO6ugIxYZbWroBm8/gviz/tq?tqx=out:csv&headers=1';
 const WA = '201025220781';
 
+// تنبيه: مفتاح textmebot ظاهر لأي حد يفتح الصفحة. الأفضل ينتقل لسيرفر وسيط (Apps Script / Cloudflare Worker)
 const WA_SEND = {
-  provider: 'textmebot',
-  textmebotKey: 'T3hE1UW5Sucn',
-  callmebotKey: ''
+  textmebotKey: 'T3hE1UW5Sucn'
 };
 
 let S = {
-  wa: '201025220781',
+  wa: WA,
   products: [],
   courses: []
-}, adm = false;
+};
 
 const $ = s => document.querySelector(s);
 
@@ -31,6 +30,31 @@ const esc = s =>
     }[c])
   );
 
+/* =====================================================
+   الصور
+   ===================================================== */
+
+// يحوّل روابط Google Drive / Dropbox لرابط صورة مباشر، ويرفع http إلى https
+function normImg(u){
+  u = String(u || '').trim().replace(/[,;|]+$/, '');
+
+  const d = u.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:[^#]*&)?id=|thumbnail\?(?:[^#]*&)?id=)([\w-]{10,})/);
+  if (d) return 'https://lh3.googleusercontent.com/d/' + d[1] + '=w1000';
+
+  if (/^https?:\/\/(www\.)?dropbox\.com\//.test(u)){
+    u = u.replace(/[?&]dl=\d/, '');
+    u += (u.includes('?') ? '&' : '?') + 'raw=1';
+  }
+
+  return u.replace(/^http:\/\//i, 'https://');
+}
+
+// no-referrer: بعض المواقع (درايف وغيره) بتمنع الصورة لو جاية من موقع تاني، وده سبب إنها تظهر في الإيديتور وما تظهرش في كروم
+// onerror: لو الصورة اتكسرت نخفيها ونعرض الإيموجي البديل بدل أيقونة مكسورة
+const imgHTML = (src, alt = '', attrs = '') =>
+  `<img ${attrs} src="${esc(src)}" alt="${esc(alt)}" referrerpolicy="no-referrer" decoding="async" onerror="this.classList.add('broken')">`;
+
+
 const CATS = [
   ['hair','منتجات الشعر','💆‍♀️'],
   ['skin','منتجات البشرة','🌿'],
@@ -39,11 +63,6 @@ const CATS = [
 
 const price = p =>
   p > 0 ? p + ' ج.م' : 'السعر عند الطلب';
-
-const wl = t =>
-  S.wa
-    ? `<a class="wa" target="_blank" rel="noopener" href="https://wa.me/${esc(S.wa)}?text=${encodeURIComponent('عايز أطلب: ' + t)}">اطلب</a>`
-    : '';
 
 let cart = {},
     q = 1,
@@ -116,12 +135,10 @@ function pc(p){
   return `
     <div class="pc rv" onclick="op('${p.id}')">
 
-      <div class="im t-${p.cat || 'basic'}">
+      <div class="im t-${p.cat || 'basic'}" data-fb="${c[2]}">
         ${
           p.img
-            ? `<img src="${esc(p.img)}"
-                    alt="${esc(p.name)}"
-                    loading="lazy">`
+            ? imgHTML(p.img, p.name, 'loading="lazy"')
             : `<span>${c[2]}</span>`
         }
       </div>
@@ -254,13 +271,9 @@ function op(id){
     ? `
       <div class="product-gallery">
 
-        <div class="gallery-main">
+        <div class="gallery-main" data-fb="${c[2]}">
 
-          <img
-            id="mainProductImg"
-            src="${esc(mainImg)}"
-            alt="${esc(p.name)}"
-          >
+          ${imgHTML(mainImg, p.name, 'id="mainProductImg"')}
 
         </div>
 
@@ -277,10 +290,7 @@ function op(id){
                     onclick="changeProductImg(this.dataset.src, this)"
                   >
 
-                    <img
-                      src="${esc(img)}"
-                      alt=""
-                    >
+                    ${imgHTML(img)}
 
                   </button>
                 `).join('')}
@@ -376,6 +386,7 @@ function changeProductImg(src, btn){
     document.querySelector('#mainProductImg');
 
   if (main){
+    main.classList.remove('broken');
     main.src = src;
   }
 
@@ -518,16 +529,11 @@ function rc(){
 
         <div class="ci">
 
-          <div class="cm">
+          <div class="cm" data-fb="🧴">
 
             ${
               x[1].img
-                ? `
-                  <img
-                    src="${esc(x[1].img)}"
-                    alt=""
-                  >
-                `
+                ? imgHTML(x[1].img)
                 : '🧴'
             }
 
@@ -671,7 +677,6 @@ async function sendWA(text){
 
 
   if (
-    WA_SEND.provider === 'textmebot' &&
     WA_SEND.textmebotKey
   ){
 
@@ -685,31 +690,6 @@ async function sendWA(text){
       )
       + '&text=' +
       encodeURIComponent(text);
-
-    await fetch(u, {
-      mode: 'no-cors',
-      cache: 'no-store'
-    });
-
-    return true;
-  }
-
-
-  if (
-    WA_SEND.provider === 'callmebot' &&
-    WA_SEND.callmebotKey
-  ){
-
-    const u =
-      'https://api.callmebot.com/whatsapp.php'
-      + '?phone=' +
-      encodeURIComponent(to)
-      + '&text=' +
-      encodeURIComponent(text)
-      + '&apikey=' +
-      encodeURIComponent(
-        WA_SEND.callmebotKey
-      );
 
     await fetch(u, {
       mode: 'no-cors',
@@ -1574,11 +1554,10 @@ function csv(t){
 
 function load(rows){
 
-  S.wa = WA;
 
   S.products = [];
 
-  const cm = {};
+  const byCourse = {};
 
 
   rows.slice(1).forEach((r, i) => {
@@ -1606,9 +1585,9 @@ function load(rows){
 
     const imgs =
       (r[4] || '')
-        .split(/\s+/)
-        .map(x => x.trim())
-        .filter(x => /^https?:/.test(x));
+        .split(/[\s,;|]+(?=https?:\/\/)/i)   // مسافة / سطر جديد / فاصلة / ; / |
+        .map(normImg)
+        .filter(x => /^https:\/\//.test(x));
 
 
     const p = {
@@ -1651,8 +1630,8 @@ function load(rows){
     if (co){
 
       (
-        cm[co] =
-          cm[co] || {
+        byCourse[co] =
+          byCourse[co] || {
             id: 'c' + i,
             name: co,
             desc: '',
@@ -1667,7 +1646,7 @@ function load(rows){
 
 
   S.courses =
-    Object.values(cm);
+    Object.values(byCourse);
 
 
   render();
@@ -1680,37 +1659,21 @@ function load(rows){
 
 render();
 
-
-setTimeout(() => {
-
-  const sp = $('#sp');
-
-  if (sp){
-    sp.classList.add('x');
-  }
-
-}, 2200);
-
-
 const sp = $('#sp');
-
 if (sp){
-
-  sp.onclick = () => {
-    sp.classList.add('x');
-  };
-
+  sp.onclick = () => sp.classList.add('x');
+  setTimeout(() => sp.classList.add('x'), 2200);
 }
 
-
 if (SHEET_URL){
-
   fetch(SHEET_URL)
-
-    .then(r => r.text())
-
+    .then(r => {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.text();
+    })
     .then(t => load(csv(t)))
-
-    .catch(() => {});
-
+    .catch(err => {
+      console.error('فشل تحميل المنتجات من الشيت:', err);
+      toast('تعذّر تحميل المنتجات، حدّث الصفحة');
+    });
 }
