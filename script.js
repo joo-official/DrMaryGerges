@@ -5,11 +5,10 @@
 const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1raXbc1Cn1JDuz4StIKchTuLaQDSbO6ugIxYZbWroBm8/gviz/tq?tqx=out:csv&headers=1';
 const WA = '201025220781';
 
-/* ====== إعدادات إرسال الطلب مباشرة عبر واتساب ====== */
 const WA_SEND = {
-  provider: 'textmebot',          // 'textmebot' أو 'callmebot' أو 'off'
-  textmebotKey: 'T3hE1UW5Sucn',   // ← مفتاحك
-  callmebotKey: ''                // لو غيرت رأيك لـ CallMeBot
+  provider: 'textmebot',
+  textmebotKey: 'T3hE1UW5Sucn',
+  callmebotKey: ''
 };
 
 let S = { wa: '201025220781', products: [], courses: [] }, adm = false;
@@ -19,7 +18,7 @@ const CATS = [['hair','منتجات الشعر','💆‍♀️'],['skin','منت
 const price = p => p > 0 ? p + ' ج.م' : 'السعر عند الطلب';
 const wl = t => S.wa ? `<a class="wa" target="_blank" rel="noopener" href="https://wa.me/${esc(S.wa)}?text=${encodeURIComponent('عايز أطلب: ' + t)}">اطلب</a>` : '';
 
-let cart = {}, q = 1, CI = [], IT = [], TT = 0, CU = { n:'', p:'' };
+let cart = {}, q = 1, CI = [], IT = [], TT = 0, CU = { n:'', p:'', a:'' };
 try { CU = JSON.parse(localStorage.getItem('mg_cu')) || CU } catch(e) {}
 try { cart = JSON.parse(localStorage.getItem('mg_cart') || '{}') } catch(e) {}
 
@@ -73,18 +72,15 @@ function rc(){
     ? it.map((x,i) => `<div class="ci"><div class="cm">${x[1].img?`<img src="${x[1].img}" alt="">`:'🧴'}</div><div class="cd"><b>${esc(x[0])}</b><span>${price(x[1].price)}</span><div class="qs"><button onclick="cq(${i},-1)">−</button><b>${x[2]}</b><button onclick="cq(${i},1)">+</button></div></div></div>`).join('')
       + `<div class="tot2"><span>الإجمالي</span><b>${tot} ج.م</b></div>`
       + (np ? '<small>بعض المنتجات سعرها عند الطلب وغير محسوبة في الإجمالي</small>' : '')
-      + `<div class="cf"><b>بيانات الطلب</b><input placeholder="الاسم" value="${esc(CU.n)}" oninput="CU.n=this.value;su()"><input type="tel" inputmode="tel" placeholder="رقم التليفون" value="${esc(CU.p)}" oninput="CU.p=this.value;su()"></div>`
+      + `<div class="cf"><b>بيانات الطلب</b><input placeholder="الاسم" value="${esc(CU.n||'')}" oninput="CU.n=this.value;su()"><input type="tel" inputmode="tel" placeholder="رقم التليفون" value="${esc(CU.p||'')}" oninput="CU.p=this.value;su()"><input placeholder="العنوان" value="${esc(CU.a||'')}" oninput="CU.a=this.value;su()"></div>`
       + `<button class="pri full" id="ckb" onclick="ck()">إتمام الطلب 🛒</button>`
       + `<div class="note">سيتم التواصل معك لتأكيد الطلب 🤍</div>`
     : '<div class="empty">السلة فاضية 🛒</div>';
 }
 function su(){ try { localStorage.setItem('mg_cu', JSON.stringify(CU)) } catch(e) {} }
 
-/* ====== دوال الإرسال عبر واتساب ====== */
 async function sendWA(text){
   const to = '+' + String(S.wa || '').replace(/\D/g,'');
-
-  // TextMeBot
   if (WA_SEND.provider === 'textmebot' && WA_SEND.textmebotKey) {
     const u = 'https://api.textmebot.com/send.php'
       + '?recipient=' + encodeURIComponent(to)
@@ -93,8 +89,6 @@ async function sendWA(text){
     await fetch(u, { mode: 'no-cors', cache: 'no-store' });
     return true;
   }
-
-  // CallMeBot (احتياطي)
   if (WA_SEND.provider === 'callmebot' && WA_SEND.callmebotKey) {
     const u = 'https://api.callmebot.com/whatsapp.php'
       + '?phone='  + encodeURIComponent(to)
@@ -103,7 +97,6 @@ async function sendWA(text){
     await fetch(u, { mode: 'no-cors', cache: 'no-store' });
     return true;
   }
-
   return false;
 }
 
@@ -118,29 +111,25 @@ function done(n){
     </div>`);
 }
 
-/* ====== إتمام الطلب ====== */
 async function ck(){
   const n = (CU.n || '').trim();
   const p = (CU.p || '').replace(/[٠-٩]/g, d => AR.indexOf(d)).replace(/\D/g,'');
   if (!n || p.length < 8) { toast('اكتب اسمك ورقم تليفونك الأول'); return }
 
-  const t = 'طلب جديد 🛒\nالاسم: ' + n + '\nالتليفون: ' + p + '\n\nالطلب:\n'
+  const t = 'طلب جديد 🛒\nالاسم: ' + n + '\nالتليفون: ' + p + (CU.a?'\nالعنوان: ' + CU.a : '') + '\n\nالطلب:\n'
     + IT.map(x => '• ' + x[0] + ' × ' + x[2] + (x[1].price ? ' = ' + x[1].price * x[2] + ' ج.م' : '')).join('\n')
     + '\n\nالإجمالي: ' + TT + ' ج.م'
     + '\n\n(سيتم التواصل مع العميل لتأكيد الطلب)';
 
   const b = $('#ckb');
   if (b) { b.disabled = true; b.textContent = 'جاري إرسال الطلب...' }
-
   let ok = false;
   try { ok = await sendWA(t); } catch(e) { ok = false }
-
   if (b) { b.disabled = false; b.textContent = 'إتمام الطلب 🛒' }
 
   if (ok) {
-    cart = {}; sv(); rc(); ct(0); done(n);   // ← وصل لواتسابك على طول ✅
+    cart = {}; sv(); rc(); ct(0); done(n);
   } else {
-    // احتياطي: لو TextMeBot فشل، نفتح واتساب عادي
     window.open('https://wa.me/' + S.wa + '?text=' + encodeURIComponent(t), '_blank');
     toast('افتح واتساب واضغط إرسال');
   }
@@ -165,7 +154,58 @@ function render(){
 <aside class="dw ct" id="cp"><h3>سلة المشتريات</h3><div id="cb"></div></aside>
 <header class="hero" id="top"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div><div class="wrap"><div class="hi">نورتنا</div><h1>تركيبات الدكتورة <span style="color:var(--a)">ماري جرجس</span></h1><p>عناية بالبشرة والجسم والشعر، بتركيبات متخصصة بتتحضّر بعناية عشان تدّيك أحسن نتيجة.</p><a class="btn" href="#about">تعرّف علينا</a></div></header>
 <div class="strip"><div>${mq}${mq}</div></div>
-<section id="about"><div class="wrap"><h2>احنا مين؟</h2><div class="sub">تركيبات الدكتورة ماري جرجس، رعاية كاملة من الراس للقدم</div><div class="abt"><a class="ab rv" href="#skin"><span>🌿</span><h3>العناية بالبشرة</h3>تركيبات لبشرة صافية ومتوازنة<em>شوف المنتجات ←</em></a><a class="ab rv" href="#basic"><span>🧴</span><h3>العناية بالجسم</h3>منتجات يومية أساسية بتركيبات لطيفة<em>شوف المنتجات ←</em></a><a class="ab rv" href="#hair"><span>💆‍♀️</span><h3>العناية بالشعر</h3>حلول للتساقط وتغذية الشعر والفروة<em>شوف المنتجات ←</em></a></div></div></section>
+
+<section id="about"><div class="wrap">
+  <h2>احنا مين؟</h2>
+  <div class="sub">تركيبات الدكتورة ماري جرجس، رعاية كاملة من الراس للقدم</div>
+
+  <div class="rich">
+    <p class="lead rv">تركيبات الدكتورة <b>ماري جرجس رمزي</b> هي صيدلية متخصصة في التركيبات الصيدلانية والتجميلية ومنتجات العناية بالشعر والبشرة.</p>
+    <p class="lead rv">يقع مقرنا الرئيسي في <b>السويس – منطقة الملاحة الجديدة، تقسيم المحروسة</b>، وتتوفر منتجاتنا من خلال الوكلاء والموزعين وخدمات الشحن في عدد من المحافظات المصرية.</p>
+
+    <div class="mv">
+      <div class="mv-card mv-v rv">
+        <span class="mv-ic">🎯</span>
+        <h3>رؤيتنا</h3>
+        <p>أن نكون من الأسماء الموثوقة والمميزة في مجال التركيبات والعناية بالشعر والبشرة في مصر، مع الحفاظ على جودة منتجاتنا الطبيعية 100٪ وثقة عملائنا.</p>
+      </div>
+      <div class="mv-card mv-m rv">
+        <span class="mv-ic">💚</span>
+        <h3>رسالتنا</h3>
+        <p>تقديم تركيبات يتم إعدادها بعناية داخل معمل الصيدلية، مع الاهتمام بجودة المكونات الطبيعية ودقة التحضير والتعبئة، وتوفير تجربة موثوقة ومميزة لعملائنا.</p>
+      </div>
+    </div>
+
+    <div class="why rv">
+      <h3>لماذا نحن؟</h3>
+      <ul>
+        <li>تخصص في التركيبات الصيدلانية والتجميلية</li>
+        <li>تحضير التركيبات داخل معمل الصيدلية</li>
+        <li>إشراف صيدلاني</li>
+        <li>اهتمام بالجودة ودقة التحضير</li>
+        <li>توفير وشحن المنتجات لعدة محافظات</li>
+      </ul>
+    </div>
+
+    <div class="lic rv">
+      <span class="lic-ic">📜</span>
+      <div>
+        <h3>التراخيص</h3>
+        <p>الصيدلية مقيدة بالسجل التجاري رقم <b>52144</b>، ومرخصة كـ <b>صيدلية عامة</b> تابعة لمديرية الشؤون الصحية بمحافظة السويس.</p>
+      </div>
+    </div>
+
+    <div class="slogan rv">من السويس إلى مختلف أنحاء مصر — تركيبات الدكتورة ماري جرجس رمزي.</div>
+  </div>
+
+  <div class="cats-title rv">تصفّح أقسام العناية</div>
+
+  <div class="abt">
+    <a class="ab rv" href="#skin"><span>🌿</span><h3>العناية بالبشرة</h3>تركيبات لبشرة صافية ومتوازنة<em>شوف المنتجات ←</em></a>
+    <a class="ab rv" href="#basic"><span>🧴</span><h3>العناية بالجسم</h3>منتجات يومية أساسية بتركيبات لطيفة<em>شوف المنتجات ←</em></a>
+    <a class="ab rv" href="#hair"><span>💆‍♀️</span><h3>العناية بالشعر</h3>حلول للتساقط وتغذية الشعر والفروة<em>شوف المنتجات ←</em></a>
+  </div>
+</div></section>
 ${crs}${sec}<footer>© تركيبات د. ماري جرجس 🤍</footer>`;
 
   const els = document.querySelectorAll('.rv');

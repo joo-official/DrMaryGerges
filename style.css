@@ -94,34 +94,57 @@ footer{text-align:center;padding:50px 18px 40px;color:var(--mut);font-size:.9rem
 
 /* ====== ملاحظة التأكيد تحت زرار الطلب ====== */
 .note{
-  text-align:center;
-  font-size:.85rem;
-  color:var(--mut);
-  padding:8px 12px;
-  background:color-mix(in srgb,var(--a) 8%,transparent);
-  border-radius:14px;
-  margin-top:6px;
-  font-weight:600;
+  text-align:center;font-size:.85rem;color:var(--mut);
+  padding:8px 12px;background:color-mix(in srgb,var(--a) 8%,transparent);
+  border-radius:14px;margin-top:6px;font-weight:600;
 }
 
 /* ====== شاشة نجاح الطلب ====== */
 .sh button:disabled{opacity:.6;cursor:wait}
 .done{text-align:center;display:grid;gap:10px;padding:8px 4px 4px}
 .done .ok{
-  width:74px;height:74px;margin:auto;
-  border-radius:50%;background:#25D366;color:#fff;
-  display:grid;place-items:center;
-  font-size:2.4rem;font-weight:900;
-  animation:pop .5s both;
+  width:74px;height:74px;margin:auto;border-radius:50%;background:#25D366;color:#fff;
+  display:grid;place-items:center;font-size:2.4rem;font-weight:900;animation:pop .5s both;
 }
 .done h3{font-size:1.35rem;font-weight:900}
 .done p{color:var(--mut)}
 .note2{
-  background:color-mix(in srgb,var(--a) 12%,transparent);
-  color:var(--a);
-  font-weight:800;
-  padding:10px 14px;
-  border-radius:14px;
-  font-size:.9rem;
-  margin-top:4px;
+  background:color-mix(in srgb,var(--a) 12%,transparent);color:var(--a);
+  font-weight:800;padding:10px 14px;border-radius:14px;font-size:.9rem;margin-top:4px;
+}
+
+/* ====== قسم من نحن — التفاصيل ====== */
+.rich{display:grid;gap:18px;margin-top:26px}
+.lead{font-size:1.02rem;color:var(--mut);line-height:1.9}
+.lead b{color:var(--a);font-weight:800}
+.mv{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.mv-card{border-radius:26px;padding:24px;position:relative;overflow:hidden;transition:transform .3s}
+.mv-card:hover{transform:translateY(-4px)}
+.mv-card h3{font-size:1.25rem;font-weight:900;margin-bottom:6px}
+.mv-card p{font-size:.95rem;line-height:1.8}
+.mv-ic{font-size:2rem;display:block;margin-bottom:8px}
+.mv-v{background:linear-gradient(150deg,var(--c),#c9b8ec);color:#1E3A33}
+.mv-m{background:linear-gradient(150deg,#bfe3d6,var(--d));color:#1E3A33}
+.why{background:var(--card);border-radius:26px;padding:24px;border:1.5px dashed color-mix(in srgb,var(--a) 45%,transparent)}
+.why h3{font-size:1.25rem;font-weight:900;margin-bottom:12px;color:var(--a)}
+.why ul{list-style:none;padding:0;display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+.why li{position:relative;padding-right:30px;font-weight:600;font-size:.95rem}
+.why li:before{content:"✓";position:absolute;right:0;top:2px;width:20px;height:20px;border-radius:50%;background:var(--a);color:var(--on);display:grid;place-items:center;font-size:.72rem;font-weight:900}
+.lic{background:linear-gradient(150deg,var(--a),#1b4a3d);color:#fff;border-radius:26px;padding:24px;display:flex;gap:16px;align-items:flex-start}
+.lic-ic{font-size:2rem;flex:none}
+.lic h3{font-size:1.15rem;font-weight:900;margin-bottom:6px;color:var(--d)}
+.lic p{font-size:.93rem;line-height:1.85}
+.lic b{color:var(--d)}
+.slogan{text-align:center;font-weight:800;font-size:1.05rem;background:var(--d);color:#1E3A33;padding:18px 20px;border-radius:24px;line-height:1.8}
+
+/* ====== فاصل قبل بطاقات الأقسام ====== */
+.cats-title{
+  display:flex;align-items:center;gap:14px;
+  margin:36px 0 4px;color:var(--a);
+  font-weight:900;font-size:1.2rem;
+}
+.cats-title:before,.cats-title:after{
+  content:"";flex:1;height:1.5px;
+  background:color-mix(in srgb,var(--a) 35%,transparent);
+  border-radius:2px;
 }
